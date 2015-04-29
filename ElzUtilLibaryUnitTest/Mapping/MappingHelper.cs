@@ -3,7 +3,7 @@ using System.Data;
 using ExifWriter.Model;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace ElzUtilLibaryUnitTest
+namespace ElzUtilLibaryUnitTest.Mapping
 {
     [TestClass]
     public class MappingHelper
@@ -11,14 +11,13 @@ namespace ElzUtilLibaryUnitTest
         [TestMethod]
         public void MapDataTableToObjectList()
         {
-            //var table = new DataTable();
-            //table.Columns.Add("Filename", typeof(string));
-            //table.Columns.Add("ExposureTime", typeof(string));
-            //table.Columns.Add("Aperture", typeof(float));
-            //table.Columns.Add("FocalLength", typeof(float));
-            //table.Columns.Add("Iso", typeof(int));
-            //table.Columns.Add("Copyright", typeof(string));
-            var table = ElzUtilLibary.Mapping.MappingHelper.CreateTypedDataTable<ImageExifData>();
+            var table = new DataTable();
+            table.Columns.Add("Filename", typeof(string));
+            table.Columns.Add("ExposureTime", typeof(string));
+            table.Columns.Add("Aperture", typeof(float));
+            table.Columns.Add("FocalLength", typeof(float));
+            table.Columns.Add("Iso", typeof(int));
+            table.Columns.Add("Copyright", typeof(string));
 
             var row = table.NewRow();
             row["Filename"] = "Test.cr2";

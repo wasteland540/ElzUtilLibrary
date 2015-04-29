@@ -23,6 +23,13 @@ namespace ElzUtilLibary.Mapping
                     var name = propertyInfo.Name;
                     var rowValue = row[name];
 
+                    if (rowValue is DBNull)
+                    {
+                        //TODO: test with all / almost all datatypes. 
+                        //datetime --> value = DateTime.Min;
+                        rowValue = null;
+                    }
+
                     type.GetProperty(name).SetValue(dataObject, rowValue);
                 }
 
