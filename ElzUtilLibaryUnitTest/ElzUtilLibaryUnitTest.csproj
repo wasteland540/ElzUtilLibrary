@@ -59,6 +59,9 @@
     <Compile Include="Dates\DateTimeExtensionsUnitTest.cs" />
     <Compile Include="Mapping\MappingHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestModel\Address.cs" />
+    <Compile Include="TestModel\Person.cs" />
+    <Compile Include="TestModel\PersonWithAddress.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ElzUtilLibary\ElzUtilLibary.csproj">
