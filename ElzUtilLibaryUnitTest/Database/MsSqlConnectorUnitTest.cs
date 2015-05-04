@@ -14,7 +14,6 @@ namespace ElzUtilLibaryUnitTest.Database
     [TestClass]
     public class MsSqlConnectorUnitTest
     {
-        //TODO: ändern vor commit!!!!
         private const string ConnectionString =
             @"Data Source=localhost\TESTDB;Initial Catalog=UnitTestDB;Integrated Security=True";
 
