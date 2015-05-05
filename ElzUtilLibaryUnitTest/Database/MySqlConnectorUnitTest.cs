@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Data;
-using System.Data.SqlClient;
-using System.Text;
 using System.Collections.Generic;
+using System.Data;
 using ElzUtilLibary.Database;
 using ElzUtilLibaryUnitTest.TestModel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -11,7 +9,7 @@ using MySql.Data.MySqlClient;
 namespace ElzUtilLibaryUnitTest.Database
 {
     /// <summary>
-    /// Summary description for MySqlConnectorUnitTest
+    ///     Summary description for MySqlConnectorUnitTest
     /// </summary>
     [TestClass]
     public class MySqlConnectorUnitTest
@@ -45,7 +43,8 @@ namespace ElzUtilLibaryUnitTest.Database
                                                       PRIMARY KEY (`AddressId`)
                                                     ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1";
 
-        private const string AddForeignKey = @"ALTER TABLE `Address` ADD CONSTRAINT `FK_PersonAddress` FOREIGN KEY (`PersId`) REFERENCES `Person` (`PersId`)";
+        private const string AddForeignKey =
+            @"ALTER TABLE `Address` ADD CONSTRAINT `FK_PersonAddress` FOREIGN KEY (`PersId`) REFERENCES `Person` (`PersId`)";
 
         private const string InsertPersons = @"INSERT INTO Person
                                                 (Firstname, Lastname, Birthday)
@@ -80,6 +79,7 @@ namespace ElzUtilLibaryUnitTest.Database
         #endregion SQL-Statements
 
         #region Additional test attributes
+
         //
         // You can use the following additional attributes as you write your tests:
         //
@@ -91,6 +91,7 @@ namespace ElzUtilLibaryUnitTest.Database
 
             _mySqlConnector = new MySqlConnector(ConnectionString);
         }
+
         //
         // Use ClassCleanup to run code after all tests in a class have run
         // [ClassCleanup()]
@@ -104,6 +105,7 @@ namespace ElzUtilLibaryUnitTest.Database
         // [TestCleanup()]
         // public void MyTestCleanup() { }
         //
+
         #endregion
 
         #region Test Setup Helper Methods
@@ -156,7 +158,7 @@ namespace ElzUtilLibaryUnitTest.Database
 
                     command.CommandText = InsertPerson1;
                     MySqlDataReader reader = command.ExecuteReader();
-                    
+
                     while (reader.Read())
                     {
                         ids[i] = reader.GetInt32(0);
@@ -311,7 +313,7 @@ namespace ElzUtilLibaryUnitTest.Database
             {
                 Firstname = "Optimus",
                 Lastname = "Prime",
-                Birthday = new DateTime(1942, 2, 2), //02.02.1942
+                Birthday = new DateTime(1942, 2, 2),
             };
 
             _mySqlConnector.InsertData(person1);

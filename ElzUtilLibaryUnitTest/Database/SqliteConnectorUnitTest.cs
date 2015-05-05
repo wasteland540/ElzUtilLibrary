@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using System.Data.SQLite;
 using ElzUtilLibary.Database;
 using ElzUtilLibaryUnitTest.TestModel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -9,61 +9,58 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace ElzUtilLibaryUnitTest.Database
 {
     /// <summary>
-    ///     Summary description for MsSqlConnectorUnitTest
+    ///     Summary description for SQLiteConnectorUnitTest
     /// </summary>
     [TestClass]
-    public class MsSqlConnectorUnitTest
+    public class SqliteConnectorUnitTest
     {
-        private const string ConnectionString =
-            @"Data Source=localhost\TESTDB;Initial Catalog=UnitTestDB;Integrated Security=True";
+        private const string ConnectionString = @"Data Source=UnitTestDB.db";
 
-        private static MsSqlConnector _msSqlConnector;
+        private static SQLiteConnector _sqliteConnector;
 
         #region SQL-Statements
 
-        private const string DropPersonTable =
-            @"if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'Person')
-                                                    DROP TABLE Person;";
+        private const string DropPersonTable = @"DROP TABLE IF EXISTS Person;";
 
-        private const string CreatePersonTable = @"CREATE TABLE [dbo].[Person](
-	                                                    [PersId] [int] IDENTITY(1,1) NOT NULL,
-	                                                    [Firstname] [varchar](50) NOT NULL,
-	                                                    [Lastname] [varchar](50) NOT NULL,
-	                                                    [Birthday] [date] NULL,
-                                                        CONSTRAINT [PK_Person] PRIMARY KEY CLUSTERED 
-                                                    (
-	                                                    [PersId] ASC
-                                                    )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-                                                    ) ON [PRIMARY]";
+        private const string CreatePersonTable = @"CREATE TABLE IF NOT EXISTS `Person` (
+                                                      `PersId` INTEGER PRIMARY KEY NOT NULL,
+                                                      `Firstname` varchar(50) NOT NULL,
+                                                      `Lastname` varchar(50) NOT NULL,
+                                                      `Birthday` date DEFAULT NULL
+                                                    )";
 
-        private const string DropAddressTable =
-            @"if exists (SELECT * FROM INFORMATION_SCHEMA.TABLES where TABLE_NAME = 'Address')
-                                                    DROP TABLE Address;";
+        private const string DropAddressTable = @"DROP TABLE IF EXISTS Address;";
 
-        private const string CreateAddressTable = @"CREATE TABLE [dbo].[Address](
-	                                                    [AddressId] [int] IDENTITY(1,1) NOT NULL,
-	                                                    [Street] [varchar](50) NOT NULL,
-	                                                    [HouseNumber] [varchar](10) NOT NULL,
-	                                                    [Zipcode] [int] NOT NULL,
-	                                                    [City] [varchar](100) NOT NULL,
-	                                                    [PersId] [int] NOT NULL,
-                                                     CONSTRAINT [PK_Address] PRIMARY KEY CLUSTERED 
-                                                    (
-	                                                    [AddressId] ASC
-                                                    )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-                                                    ) ON [PRIMARY]";
-
-        private const string AddForeignKey =
-            @"ALTER TABLE [dbo].[Address]  WITH CHECK ADD  CONSTRAINT [FK_PersonAddress] FOREIGN KEY([PersId])
-                                                REFERENCES [dbo].[Person] ([PersId])";
+        private const string CreateAddressTable = @"CREATE TABLE IF NOT EXISTS `Address` (
+                                                      `AddressId` INTEGER PRIMARY KEY NOT NULL,
+                                                      `Street` varchar(50) NOT NULL,
+                                                      `HouseNumber` varchar(10) NOT NULL,
+                                                      `Zipcode` INTEGER NOT NULL,
+                                                      `City` varchar(100) NOT NULL,
+                                                      `PersId` INTEGER NOT NULL
+                                                    )";
 
         private const string InsertPersons = @"INSERT INTO Person
                                                 (Firstname, Lastname, Birthday)
-                                                OUTPUT inserted.PersId
                                                 VALUES
                                                 ('Marcel', 'Elz', NULL),
-                                                ('Hans', 'Mustermann', '01.01.2015'),
-                                                ('Optimus', 'Prime', '02.02.1942');";
+                                                ('Hans', 'Mustermann', '2015-01-01'),
+                                                ('Optimus', 'Prime', '1942-02-02');";
+        private const string InsertPerson1 = @"INSERT INTO Person
+                                                (Firstname, Lastname, Birthday)
+                                                VALUES
+                                                ('Marcel', 'Elz', NULL);
+                                               SELECT last_insert_rowid();";
+        private const string InsertPerson2 = @"INSERT INTO Person
+                                                (Firstname, Lastname, Birthday)
+                                                VALUES
+                                                ('Hans', 'Mustermann', '2015-01-01');
+                                               SELECT last_insert_rowid();";
+        private const string InsertPerson3 = @"INSERT INTO Person
+                                                (Firstname, Lastname, Birthday)
+                                                VALUES
+                                                 ('Optimus', 'Prime', '1942-02-02');
+                                               SELECT last_insert_rowid();";
         private const string InsertAddresses = @"INSERT INTO Address
                                                 (Street, HouseNumber, Zipcode, City, PersId)
                                                 VALUES
@@ -86,7 +83,7 @@ namespace ElzUtilLibaryUnitTest.Database
         {
             SetupDatabase();
 
-            _msSqlConnector = new MsSqlConnector(ConnectionString);
+            _sqliteConnector = new SQLiteConnector(ConnectionString);
         }
 
         //
@@ -109,11 +106,11 @@ namespace ElzUtilLibaryUnitTest.Database
 
         private static void SetupDatabase()
         {
-            using (var connection = new SqlConnection(ConnectionString))
+            using (var connection = new SQLiteConnection(ConnectionString))
             {
                 connection.Open();
 
-                using (var command = new SqlCommand())
+                using (var command = new SQLiteCommand())
                 {
                     command.Connection = connection;
 
@@ -129,9 +126,6 @@ namespace ElzUtilLibaryUnitTest.Database
                     command.CommandText = CreateAddressTable;
                     command.ExecuteNonQuery();
 
-                    command.CommandText = AddForeignKey;
-                    command.ExecuteNonQuery();
-
                     command.Dispose();
                 }
 
@@ -142,19 +136,19 @@ namespace ElzUtilLibaryUnitTest.Database
 
         private void SetupData()
         {
-            using (var connection = new SqlConnection(ConnectionString))
+            using (var connection = new SQLiteConnection(ConnectionString))
             {
                 connection.Open();
 
-                using (var command = new SqlCommand())
+                using (var command = new SQLiteCommand())
                 {
                     command.Connection = connection;
 
-                    command.CommandText = InsertPersons;
-                    SqlDataReader reader = command.ExecuteReader();
-
                     var ids = new object[3];
                     int i = 0;
+
+                    command.CommandText = InsertPerson1;
+                    SQLiteDataReader reader = command.ExecuteReader();
 
                     while (reader.Read())
                     {
@@ -163,6 +157,28 @@ namespace ElzUtilLibaryUnitTest.Database
                     }
                     reader.Close();
 
+                    command.CommandText = InsertPerson2;
+                    reader = command.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        ids[i] = reader.GetInt32(0);
+                        i++;
+                    }
+                    reader.Close();
+
+                    command.CommandText = InsertPerson3;
+                    reader = command.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        ids[i] = reader.GetInt32(0);
+                        i++;
+                    }
+                    reader.Close();
+
+
+                    //insert addresses
                     command.CommandText = string.Format(InsertAddresses, ids);
                     command.ExecuteNonQuery();
 
@@ -176,11 +192,11 @@ namespace ElzUtilLibaryUnitTest.Database
 
         private void CleanupData()
         {
-            using (var connection = new SqlConnection(ConnectionString))
+            using (var connection = new SQLiteConnection(ConnectionString))
             {
                 connection.Open();
 
-                using (var command = new SqlCommand())
+                using (var command = new SQLiteCommand())
                 {
                     command.Connection = connection;
 
@@ -202,16 +218,16 @@ namespace ElzUtilLibaryUnitTest.Database
         {
             bool isVerfied = false;
 
-            using (var connection = new SqlConnection(ConnectionString))
+            using (var connection = new SQLiteConnection(ConnectionString))
             {
                 connection.Open();
 
-                using (var command = new SqlCommand())
+                using (var command = new SQLiteCommand())
                 {
                     command.Connection = connection;
 
                     command.CommandText = "SELECT * FROM Person";
-                    SqlDataReader reader = command.ExecuteReader();
+                    SQLiteDataReader reader = command.ExecuteReader();
 
                     var datatable = new DataTable();
                     datatable.Load(reader);
@@ -239,17 +255,17 @@ namespace ElzUtilLibaryUnitTest.Database
             SetupData();
 
             List<Person> personList =
-                _msSqlConnector.GetData<Person>("SELECT PersId, Firstname, Lastname, Birthday FROM Person");
+                _sqliteConnector.GetData<Person>("SELECT PersId, Firstname, Lastname, Birthday FROM Person");
             Assert.IsTrue(personList != null);
             Assert.IsTrue(personList.Count == 3);
 
             List<Address> addressList =
-                _msSqlConnector.GetData<Address>("SELECT AddressId, Street, HouseNumber, Zipcode, City FROM Address");
+                _sqliteConnector.GetData<Address>("SELECT AddressId, Street, HouseNumber, Zipcode, City FROM Address");
             Assert.IsTrue(addressList != null);
             Assert.IsTrue(addressList.Count == 3);
 
             List<PersonWithAddress> personWithAddressList =
-                _msSqlConnector.GetData<PersonWithAddress>(
+                _sqliteConnector.GetData<PersonWithAddress>(
                     "SELECT p.PersId AS PersId, Firstname, Lastname, Birthday, Street, HouseNumber, Zipcode, City FROM Person p, Address a WHERE p.PersId = a.PersId");
             Assert.IsTrue(personWithAddressList != null);
             Assert.IsTrue(personWithAddressList.Count == 3);
@@ -260,7 +276,7 @@ namespace ElzUtilLibaryUnitTest.Database
         [TestMethod]
         public void InsertData()
         {
-            _msSqlConnector.InsertData(InsertPersons);
+            _sqliteConnector.InsertData(InsertPersons);
 
             Assert.IsTrue(VerifyDataInsert());
 
@@ -291,9 +307,9 @@ namespace ElzUtilLibaryUnitTest.Database
                 Birthday = new DateTime(1942, 2, 2),
             };
 
-            _msSqlConnector.InsertData(person1);
-            _msSqlConnector.InsertData(person2);
-            _msSqlConnector.InsertData(person3);
+            _sqliteConnector.InsertData(person1);
+            _sqliteConnector.InsertData(person2);
+            _sqliteConnector.InsertData(person3);
 
             Assert.IsTrue(VerifyDataInsert());
 
