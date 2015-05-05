@@ -17,7 +17,7 @@ namespace ElzUtilLibaryUnitTest.Database
         private const string ConnectionString =
             @"Data Source=localhost\TESTDB;Initial Catalog=UnitTestDB;Integrated Security=True";
 
-        private static MsSqlConnector _msSqlConnector;
+        private static IDatabaseConnector _msSqlConnector;
 
         #region SQL-Statements
 

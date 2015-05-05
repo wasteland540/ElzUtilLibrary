@@ -16,7 +16,7 @@ namespace ElzUtilLibaryUnitTest.Database
     {
         private const string ConnectionString = @"Data Source=UnitTestDB.db";
 
-        private static SQLiteConnector _sqliteConnector;
+        private static IDatabaseConnector _sqliteConnector;
 
         #region SQL-Statements
 

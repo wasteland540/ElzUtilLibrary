@@ -17,7 +17,7 @@ namespace ElzUtilLibaryUnitTest.Database
         private const string ConnectionString =
             @"SERVER=localhost;DATABASE=UnitTestDB;UID=root;";
 
-        private static MySqlConnector _mySqlConnector;
+        private static IDatabaseConnector _mySqlConnector;
 
         #region SQL-Statements
 
