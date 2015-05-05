@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Data;
-using ExifWriter.Model;
+using ElzUtilLibaryUnitTest.TestModel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ElzUtilLibaryUnitTest.Mapping
@@ -12,43 +12,37 @@ namespace ElzUtilLibaryUnitTest.Mapping
         public void MapDataTableToObjectList()
         {
             var table = new DataTable();
-            table.Columns.Add("Filename", typeof(string));
-            table.Columns.Add("ExposureTime", typeof(string));
-            table.Columns.Add("Aperture", typeof(float));
-            table.Columns.Add("FocalLength", typeof(float));
-            table.Columns.Add("Iso", typeof(int));
-            table.Columns.Add("Copyright", typeof(string));
+            table.Columns.Add("PersId", typeof(int));
+            table.Columns.Add("Firstname", typeof(string));
+            table.Columns.Add("Lastname", typeof(string));
+            table.Columns.Add("Birthday", typeof(DateTime));
 
             var row = table.NewRow();
-            row["Filename"] = "Test.cr2";
-            row["ExposureTime"] = "1/200";
-            row["Aperture"] = 8.0f;
-            row["FocalLength"] = 50.0f;
-            row["Iso"] = 800;
-            row["Copyright"] = "m.elz";
+            row["PersId"] = 1;
+            row["Firstname"] = "Marcel";
+            row["Lastname"] = "Elz";
+            row["Birthday"] = new DateTime(2015, 5, 5);
             table.Rows.Add(row);
 
-            var objectList = ElzUtilLibary.Mapping.MappingHelper.MapDataTableToObjectList<ImageExifData>(table);
+            var objectList = ElzUtilLibary.Mapping.MappingHelper.MapDataTableToObjectList<Person>(table);
 
             Assert.IsTrue(objectList != null);
             Assert.IsTrue(objectList.Count == 1);
-            Assert.IsTrue(objectList[0].GetType() == typeof(ImageExifData));
-            Assert.IsTrue(objectList[0].Filename == "Test.cr2");
-            Assert.IsTrue(objectList[0].ExposureTime == "1/200");
-            Assert.IsTrue(Math.Abs(objectList[0].Aperture - 8.0f) < 0.00000001);
-            Assert.IsTrue(Math.Abs(objectList[0].FocalLength - 50.0f) < 0.00000001);
-            Assert.IsTrue(objectList[0].Iso == 800);
-            Assert.IsTrue(objectList[0].Copyright == "m.elz");
+            Assert.IsTrue(objectList[0].GetType() == typeof(Person));
+            Assert.IsTrue(objectList[0].PersId == 1);
+            Assert.IsTrue(objectList[0].Firstname == "Marcel");
+            Assert.IsTrue(objectList[0].Lastname == "Elz");
+            Assert.IsTrue(objectList[0].Birthday == new DateTime(2015, 5, 5));
 
         }
 
         [TestMethod]
         public void CreateTypedDataTable()
         {
-            var dataTable = ElzUtilLibary.Mapping.MappingHelper.CreateTypedDataTable<ImageExifData>();
+            var dataTable = ElzUtilLibary.Mapping.MappingHelper.CreateTypedDataTable<Person>();
 
             Assert.IsTrue(dataTable != null);
-            Assert.IsTrue(dataTable.Columns.Count == 6);
+            Assert.IsTrue(dataTable.Columns.Count == 4);
         }
     }
 }
