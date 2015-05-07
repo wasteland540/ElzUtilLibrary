@@ -67,6 +67,7 @@
     <Compile Include="Database\MySqlConnectorUnitTest.cs" />
     <Compile Include="Dates\DateTimeExtensionsUnitTest.cs" />
     <Compile Include="Mapping\MappingHelper.cs" />
+    <Compile Include="Math\Formula\FormulaCalculatorUnitTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestModel\Address.cs" />
     <Compile Include="TestModel\Person.cs" />
