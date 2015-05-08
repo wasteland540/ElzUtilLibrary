@@ -13,6 +13,7 @@ namespace ElzUtilLibary.Math.Formula
         private const string ParameterPattern = "[A-Za-z]+\\.?([A-Za-z]+)?";
         private readonly Regex _regex;
         private Dictionary<string, double?> _parameters;
+        private string _originalFormula;
 
         public FormulaCalculator()
         {
@@ -55,6 +56,7 @@ namespace ElzUtilLibary.Math.Formula
             {
                 //remove whitespace
                 Formula = Formula.Replace(" ", "");
+                _originalFormula = Formula;
 
                 //determine parameters
                 MatchCollection matches = _regex.Matches(Formula);
@@ -88,11 +90,14 @@ namespace ElzUtilLibary.Math.Formula
                     throw new FormulaParametersNotSetException("Parameters aren't all set!");
                 }
 
+                Formula = _originalFormula;
+
                 //replace parameters with values
                 foreach (string parameterKey in _parameters.Keys)
                 {
                     double? param = _parameters[parameterKey];
 
+                    
                     if (param != null)
                     {
                         Formula = Formula.Replace(parameterKey, param.Value.ToString(CultureInfo.InvariantCulture));
