@@ -324,5 +324,38 @@ namespace ElzUtilLibaryUnitTest.Database
 
             CleanupData();
         }
+
+        [TestMethod]
+        public void InsertDataTWithTablenameAttribute()
+        {
+            var person1 = new Person2
+            {
+                Firstname = "Marcel",
+                Lastname = "Elz",
+                Birthday = DateTime.MinValue,
+            };
+
+            var person2 = new Person2
+            {
+                Firstname = "Hans",
+                Lastname = "Mustermann",
+                Birthday = new DateTime(2015, 1, 1),
+            };
+
+            var person3 = new Person2
+            {
+                Firstname = "Optimus",
+                Lastname = "Prime",
+                Birthday = new DateTime(1942, 2, 2),
+            };
+
+            _mySqlConnector.InsertData(person1);
+            _mySqlConnector.InsertData(person2);
+            _mySqlConnector.InsertData(person3);
+
+            Assert.IsTrue(VerifyDataInsert());
+
+            CleanupData();
+        }
     }
 }

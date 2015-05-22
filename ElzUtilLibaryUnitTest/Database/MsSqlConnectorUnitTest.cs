@@ -15,7 +15,8 @@ namespace ElzUtilLibaryUnitTest.Database
     public class MsSqlConnectorUnitTest
     {
         private const string ConnectionString =
-            @"Data Source=localhost\TESTDB;Initial Catalog=UnitTestDB;Integrated Security=True";
+            //@"Data Source=localhost\TESTDB;Initial Catalog=UnitTestDB;Integrated Security=True";
+            @"Data Source=localhost\KS21DB;Initial Catalog=UnitTestDB;Integrated Security=True";
 
         private static IDatabaseConnector _msSqlConnector;
 
@@ -285,6 +286,39 @@ namespace ElzUtilLibaryUnitTest.Database
             };
 
             var person3 = new Person
+            {
+                Firstname = "Optimus",
+                Lastname = "Prime",
+                Birthday = new DateTime(1942, 2, 2),
+            };
+
+            _msSqlConnector.InsertData(person1);
+            _msSqlConnector.InsertData(person2);
+            _msSqlConnector.InsertData(person3);
+
+            Assert.IsTrue(VerifyDataInsert());
+
+            CleanupData();
+        }
+
+        [TestMethod]
+        public void InsertDataTWithTablenameAttribute()
+        {
+            var person1 = new Person2
+            {
+                Firstname = "Marcel",
+                Lastname = "Elz",
+                Birthday = DateTime.MinValue,
+            };
+
+            var person2 = new Person2
+            {
+                Firstname = "Hans",
+                Lastname = "Mustermann",
+                Birthday = new DateTime(2015, 1, 1),
+            };
+
+            var person3 = new Person2
             {
                 Firstname = "Optimus",
                 Lastname = "Prime",

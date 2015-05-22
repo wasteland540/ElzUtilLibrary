@@ -64,23 +64,24 @@ namespace ElzUtilLibary.Database
                 tableName = dataObject.GetType().Name;
             }
 
-            using (IDbConnection connection = GetDbConnection())
-            {
-                connection.Open();
+            Insert(dataObject, tableName);
+        }
 
-                using (IDbCommand command = GetDbCommand())
-                {
-                    command.Connection = connection;
-                    command.CommandText = BuildSqlInsertStatement(dataObject, tableName);
+        public void InsertData<T>(T dataObject)
+        {
+            var tableName = ResolveTablename(dataObject);
 
-                    command.ExecuteNonQuery();
+            Insert(dataObject, tableName);
+        }
 
-                    command.Dispose();
-                }
+        public void Update<T>(T dataObject, bool saveUpdate = false)
+        {
+            throw new NotImplementedException();
+        }
 
-                connection.Close();
-                connection.Dispose();
-            }
+        public void Delete<T>(T dataObject, bool saveDelete = false)
+        {
+            throw new NotImplementedException();
         }
 
         protected DataTable ReadData<T>(string sqlStatement)
@@ -198,6 +199,47 @@ namespace ElzUtilLibary.Database
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+
+        private void Insert<T>(T dataObject, string tableName)
+        {
+            using (IDbConnection connection = GetDbConnection())
+            {
+                connection.Open();
+
+                using (IDbCommand command = GetDbCommand())
+                {
+                    command.Connection = connection;
+                    command.CommandText = BuildSqlInsertStatement(dataObject, tableName);
+
+                    command.ExecuteNonQuery();
+
+                    command.Dispose();
+                }
+
+                connection.Close();
+                connection.Dispose();
+            }
+        }
+
+        private string ResolveTablename(object dataObject)
+        {
+            string tableName;
+
+            var tablenameAttribute = (Tablename) dataObject.GetType().GetCustomAttribute(typeof(Tablename));
+
+            if (tablenameAttribute != null)
+            {
+                tableName = tablenameAttribute.Name == string.Empty
+                    ? dataObject.GetType().Name
+                    : tablenameAttribute.Name;
+            }
+            else
+            {
+                tableName = dataObject.GetType().Name;
+            }
+
+            return tableName;
         }
 
         protected abstract string Escape(object dataValue);

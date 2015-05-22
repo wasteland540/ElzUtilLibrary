@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace ElzUtilLibary.Database
 {
@@ -8,6 +9,13 @@ namespace ElzUtilLibary.Database
 
         void InsertData(string sqlStatement);
 
+        [Obsolete("Please use 'InsertData<T>(T dataObject)' method and 'Tablename' attribute instead.")]
         void InsertData<T>(T dataObject, string tableName = "");
+
+        void InsertData<T>(T dataObject);
+
+        void Update<T>(T dataObject, bool saveUpdate = false);
+
+        void Delete<T>(T dataObject, bool saveDelete = false);
     }
 }
