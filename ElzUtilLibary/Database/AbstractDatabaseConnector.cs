@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.Reflection;
 using ElzUtilLibary.Database.Attributes;
+using ElzUtilLibary.Database.Exceptions;
 using ElzUtilLibary.Mapping;
 using MySql.Data.MySqlClient;
 
@@ -20,6 +21,11 @@ namespace ElzUtilLibary.Database
         }
 
         private const string SqlInsertTemplate = "INSERT INTO {0} ({1}) VALUES ({2})";
+        private const string SqlUpdateTemplate = "UPDATE {0} SET {1} WHERE {2}";
+        private const string SqlDeleteTemplate = "DELETE FROM {0} WHERE {1}";
+
+        private const string UnsafePrimaryKeyNotSetExecptionMessage =
+            "Primary Key not set for entity '{0}'. If you using the unsafe delete/update method you have to declare a primary key!";
         protected readonly string ConnectionString = string.Empty;
         protected Database DatabaseType;
 
@@ -59,7 +65,7 @@ namespace ElzUtilLibary.Database
 
         public void InsertData<T>(T dataObject, string tableName = "")
         {
-            if (tableName == "")
+            if (tableName == string.Empty)
             {
                 tableName = dataObject.GetType().Name;
             }
@@ -76,15 +82,56 @@ namespace ElzUtilLibary.Database
 
         public void Update<T>(T dataObject, bool saveUpdate = false)
         {
-            throw new NotImplementedException();
+            if (saveUpdate)
+            {
+                throw new NotSupportedException("Only unsafe update method implemented yet.");
+            }
+
+            var tableName = ResolveTablename(dataObject);
+
+            using (IDbConnection connection = GetDbConnection())
+            {
+                connection.Open();
+
+                using (IDbCommand command = GetDbCommand())
+                {
+                    command.Connection = connection;
+                    command.CommandText = BuildSqlUpdateStatement(dataObject, tableName, saveUpdate);
+
+                    command.ExecuteNonQuery();
+
+                    command.Dispose();
+                }
+
+                connection.Close();
+                connection.Dispose();
+            }
         }
 
         public void Delete<T>(T dataObject, bool saveDelete = false)
         {
-            throw new NotImplementedException();
+            var tableName = ResolveTablename(dataObject);
+
+            using (IDbConnection connection = GetDbConnection())
+            {
+                connection.Open();
+
+                using (IDbCommand command = GetDbCommand())
+                {
+                    command.Connection = connection;
+                    command.CommandText = BuildSqlDeleteStatement(dataObject, tableName, saveDelete);
+
+                    command.ExecuteNonQuery();
+
+                    command.Dispose();
+                }
+
+                connection.Close();
+                connection.Dispose();
+            }
         }
 
-        protected DataTable ReadData<T>(string sqlStatement)
+        private DataTable ReadData<T>(string sqlStatement)
         {
             DataTable dataTable;
 
@@ -112,7 +159,7 @@ namespace ElzUtilLibary.Database
             return dataTable;
         }
 
-        protected string BuildSqlInsertStatement<T>(T dataObject, string tableName)
+        private string BuildSqlInsertStatement<T>(T dataObject, string tableName)
         {
             string columnNames = string.Empty;
             string valueList = string.Empty;
@@ -139,6 +186,93 @@ namespace ElzUtilLibary.Database
             valueList = valueList.Substring(0, valueList.Length - 2);
 
             return string.Format(SqlInsertTemplate, tableName, columnNames, valueList);
+        }
+
+        private string BuildSqlUpdateStatement<T>(T dataObject, string tableName, bool saveUpdate)
+        {
+            string whereClause = BuildWhereClause(dataObject, saveUpdate);
+            string setClause = BuildSetClause(dataObject);
+
+            return string.Format(SqlUpdateTemplate, tableName, setClause, whereClause);
+        }
+
+        private string BuildSqlDeleteStatement<T>(T dataObject, string tableName, bool saveDelete)
+        {
+            string whereClause = BuildWhereClause(dataObject, saveDelete);
+
+            return string.Format(SqlDeleteTemplate, tableName, whereClause);
+        }
+
+        private string BuildWhereClause<T>(T dataObject, bool save)
+        {
+            string whereClause = string.Empty;
+
+            Type type = typeof (T);
+            PropertyInfo[] properties = type.GetProperties();
+
+            if (save)
+            {
+                foreach (PropertyInfo propertyInfo in properties)
+                {
+                    var columnName = propertyInfo.Name;
+                    var columnValue = Escape(propertyInfo.GetValue(dataObject));
+
+                    if (columnValue == "NULL")
+                    {
+                        whereClause += string.Format("{0} IS {1} AND ", columnName, columnValue);
+                    }
+                    else
+                    {
+                        whereClause += string.Format("{0} = {1} AND ", columnName, columnValue);
+                    }
+                }
+
+                whereClause = whereClause.Substring(0, whereClause.Length - 5);
+            }
+            else
+            {
+                foreach (PropertyInfo propertyInfo in properties)
+                {
+                    if (IsPrimaryKey(propertyInfo))
+                    {
+                        var columnName = propertyInfo.Name;
+                        var columnValue = Escape(propertyInfo.GetValue(dataObject));
+
+                        whereClause = string.Format("{0} = {1}", columnName, columnValue);
+                        break;
+                    }
+                }
+
+                if (string.IsNullOrEmpty(whereClause))
+                {
+                    throw new PrimaryKeyNotSetException(string.Format(UnsafePrimaryKeyNotSetExecptionMessage,
+                        dataObject.GetType().FullName));
+                }
+            }
+            return whereClause;
+        }
+
+        private string BuildSetClause<T>(T dataObject)
+        {
+            string setClause = string.Empty;
+
+            Type type = typeof (T);
+            PropertyInfo[] properties = type.GetProperties();
+            
+            foreach (PropertyInfo propertyInfo in properties)
+            {
+                if (!IsPrimaryKey(propertyInfo))
+                {
+                    var columnName = propertyInfo.Name;
+                    var columnValue = Escape(propertyInfo.GetValue(dataObject));
+
+                    setClause += string.Format("{0} = {1}, ", columnName, columnValue);    
+                }
+            }
+
+            setClause = setClause.Substring(0, setClause.Length - 2);
+
+            return setClause;
         }
 
         private bool IsPrimaryKeyAutogenerated(PropertyInfo propertyInfo)

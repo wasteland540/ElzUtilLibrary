@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 using ElzUtilLibary.Database;
+using ElzUtilLibary.Database.Exceptions;
 using ElzUtilLibaryUnitTest.TestModel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -100,9 +102,11 @@ namespace ElzUtilLibaryUnitTest.Database
         // public void MyTestInitialize() { }
         //
         // Use TestCleanup to run code after each test has run
-        // [TestCleanup()]
-        // public void MyTestCleanup() { }
-        //
+        [TestCleanup()]
+        public void MyTestCleanup()
+        {
+            CleanupData();
+        }
 
         #endregion
 
@@ -254,8 +258,6 @@ namespace ElzUtilLibaryUnitTest.Database
                     "SELECT p.PersId AS PersId, Firstname, Lastname, Birthday, Street, HouseNumber, Zipcode, City FROM Person p, Address a WHERE p.PersId = a.PersId");
             Assert.IsTrue(personWithAddressList != null);
             Assert.IsTrue(personWithAddressList.Count == 3);
-
-            CleanupData();
         }
 
         [TestMethod]
@@ -264,8 +266,6 @@ namespace ElzUtilLibaryUnitTest.Database
             _msSqlConnector.InsertData(InsertPersons);
 
             Assert.IsTrue(VerifyDataInsert());
-
-            CleanupData();
         }
 
         [TestMethod]
@@ -297,8 +297,6 @@ namespace ElzUtilLibaryUnitTest.Database
             _msSqlConnector.InsertData(person3);
 
             Assert.IsTrue(VerifyDataInsert());
-
-            CleanupData();
         }
 
         [TestMethod]
@@ -330,8 +328,130 @@ namespace ElzUtilLibaryUnitTest.Database
             _msSqlConnector.InsertData(person3);
 
             Assert.IsTrue(VerifyDataInsert());
+        }
 
-            CleanupData();
+        [TestMethod]
+        public void DeleteUnsafe()
+        {
+            var person1 = new Person
+            {
+                Firstname = "Marcel",
+                Lastname = "Elz",
+                Birthday = DateTime.MinValue,
+            };
+
+            _msSqlConnector.InsertData(person1);
+
+            var personToDelete = _msSqlConnector.GetData<Person>("SELECT PersId, Firstname, Lastname, Birthday FROM Person").FirstOrDefault();
+            Assert.IsNotNull(personToDelete);
+
+            _msSqlConnector.Delete(personToDelete);
+
+            var resultList = _msSqlConnector.GetData<Person>("SELECT PersId, Firstname, Lastname, Birthday FROM Person");
+            Assert.IsTrue(resultList.Count == 0);
+        }
+
+        [TestMethod]
+        public void DeleteUnsafeThrowException()
+        {
+            var address = new Address();
+            
+            try
+            {
+                _msSqlConnector.Delete(address);
+
+                Assert.Fail();
+            }
+            catch (PrimaryKeyNotSetException e)
+            {
+                Assert.IsTrue(e.Message == "Primary Key not set for entity 'ElzUtilLibaryUnitTest.TestModel.Address'. If you using the unsafe delete/update method you have to declare a primary key!");
+            }
+        }
+
+        [TestMethod]
+        public void DeleteSafe()
+        {
+            var person1 = new Person
+            {
+                Firstname = "Marcel",
+                Lastname = "Elz",
+                Birthday = DateTime.MinValue,
+            };
+
+            _msSqlConnector.InsertData(person1);
+
+            var personToDelete = _msSqlConnector.GetData<Person>("SELECT PersId, Firstname, Lastname, Birthday FROM Person").FirstOrDefault();
+            Assert.IsNotNull(personToDelete);
+
+            _msSqlConnector.Delete(personToDelete, true);
+
+            var resultList = _msSqlConnector.GetData<Person>("SELECT PersId, Firstname, Lastname, Birthday FROM Person");
+            Assert.IsTrue(resultList.Count == 0);
+        }
+
+        [TestMethod]
+        public void UpdateUnsafe()
+        {
+            var person1 = new Person
+            {
+                Firstname = "Marcel",
+                Lastname = "Elz",
+                Birthday = DateTime.MinValue,
+            };
+
+            _msSqlConnector.InsertData(person1);
+
+            var personToUpdate = _msSqlConnector.GetData<Person>("SELECT PersId, Firstname, Lastname, Birthday FROM Person").FirstOrDefault();
+            Assert.IsNotNull(personToUpdate);
+
+            personToUpdate.Firstname = "Marcel aka wasteland";
+
+            _msSqlConnector.Update(personToUpdate);
+
+            var resultList = _msSqlConnector.GetData<Person>("SELECT PersId, Firstname, Lastname, Birthday FROM Person");
+            Assert.IsTrue(resultList.Count == 1);
+            Assert.IsTrue(resultList[0].Firstname == "Marcel aka wasteland");
+        }
+
+        [TestMethod]
+        public void UpdateUnsafeThrowException()
+        {
+            var address = new Address();
+
+            try
+            {
+                _msSqlConnector.Update(address);
+
+                Assert.Fail();
+            }
+            catch (PrimaryKeyNotSetException e)
+            {
+                Assert.IsTrue(e.Message == "Primary Key not set for entity 'ElzUtilLibaryUnitTest.TestModel.Address'. If you using the unsafe delete/update method you have to declare a primary key!");
+            }
+        }
+
+        [TestMethod]
+        public void UpdateSafe()
+        {
+            var person1 = new Person
+            {
+                Firstname = "Marcel",
+                Lastname = "Elz",
+                Birthday = DateTime.MinValue,
+            };
+
+            _msSqlConnector.InsertData(person1);
+
+            var personToUpdate = _msSqlConnector.GetData<Person>("SELECT PersId, Firstname, Lastname, Birthday FROM Person").FirstOrDefault();
+            Assert.IsNotNull(personToUpdate);
+
+            personToUpdate.Firstname = "Marcel aka wasteland";
+
+            _msSqlConnector.Update(personToUpdate, true);
+
+            var resultList = _msSqlConnector.GetData<Person>("SELECT PersId, Firstname, Lastname, Birthday FROM Person");
+            Assert.IsTrue(resultList.Count == 1);
+            Assert.IsTrue(resultList[0].Firstname == "Marcel aka wasteland");
         }
     }
 }

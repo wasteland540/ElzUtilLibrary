@@ -27,7 +27,14 @@ namespace ElzUtilLibary.Database
             {
                 var date = ((DateTime) dataValue);
 
-                return string.Format("date('{0}-{1}-{2}')", date.Year, date.Month, date.Day);
+                var value = string.Format("date('{0}-{1}-{2}')", date.Year, date.Month, date.Day);
+
+                if (value == "date('1-1-1')")
+                {
+                    value = "NULL";
+                }
+
+                return value;
             }
 
             if (dataValue != null)
