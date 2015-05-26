@@ -455,5 +455,29 @@ namespace ElzUtilLibaryUnitTest.Database
                 Assert.IsTrue(e.Message == "Primary Key not set for entity 'ElzUtilLibaryUnitTest.TestModel.Address'. If you using the unsafe delete/update method you have to declare a primary key!");
             }
         }
+
+        [TestMethod]
+        public void UpdateSafe()
+        {
+            var person1 = new Person
+            {
+                Firstname = "Marcel",
+                Lastname = "Elz",
+                Birthday = DateTime.MinValue,
+            };
+
+            _mySqlConnector.InsertData(person1);
+
+            var personToUpdate = _mySqlConnector.GetData<Person>("SELECT PersId, Firstname, Lastname, Birthday FROM Person").FirstOrDefault();
+            Assert.IsNotNull(personToUpdate);
+
+            personToUpdate.Firstname = "Marcel aka wasteland";
+
+            _mySqlConnector.Update(personToUpdate, true);
+
+            var resultList = _mySqlConnector.GetData<Person>("SELECT PersId, Firstname, Lastname, Birthday FROM Person");
+            Assert.IsTrue(resultList.Count == 1);
+            Assert.IsTrue(resultList[0].Firstname == "Marcel aka wasteland");
+        }
     }
 }

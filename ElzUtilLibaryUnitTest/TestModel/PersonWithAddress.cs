@@ -1,8 +1,9 @@
 ﻿using System;
+using ElzUtilLibary.Database.BaseClasses;
 
 namespace ElzUtilLibaryUnitTest.TestModel
 {
-    public class PersonWithAddress
+    public class PersonWithAddress : Entity
     {
         public int PersId { get; set; }
         public string Firstname { get; set; }

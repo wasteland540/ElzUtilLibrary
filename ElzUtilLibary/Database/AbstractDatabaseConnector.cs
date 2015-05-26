@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.Reflection;
 using ElzUtilLibary.Database.Attributes;
+using ElzUtilLibary.Database.BaseClasses;
 using ElzUtilLibary.Database.Exceptions;
 using ElzUtilLibary.Mapping;
 using MySql.Data.MySqlClient;
@@ -26,6 +27,7 @@ namespace ElzUtilLibary.Database
 
         private const string UnsafePrimaryKeyNotSetExecptionMessage =
             "Primary Key not set for entity '{0}'. If you using the unsafe delete/update method you have to declare a primary key!";
+
         protected readonly string ConnectionString = string.Empty;
         protected Database DatabaseType;
 
@@ -35,11 +37,18 @@ namespace ElzUtilLibary.Database
             ConnectionString = connectionString;
         }
 
-        public List<T> GetData<T>(string sqlStatement) where T : new()
+        public List<T> GetData<T>(string sqlStatement) where T : Entity, new()
         {
             DataTable table = ReadData<T>(sqlStatement);
 
-            return MappingHelper.MapDataTableToObjectList<T>(table);
+            List<T> test = MappingHelper.MapDataTableToObjectList<T>(table);
+
+            foreach (T t in test)
+            {
+                t.SaveOriginalProperties();
+            }
+
+            return test;
         }
 
         public void InsertData(string sqlStatement)
@@ -73,21 +82,16 @@ namespace ElzUtilLibary.Database
             Insert(dataObject, tableName);
         }
 
-        public void InsertData<T>(T dataObject)
+        public void InsertData<T>(T dataObject) where T : Entity
         {
-            var tableName = ResolveTablename(dataObject);
+            string tableName = ResolveTablename(dataObject);
 
             Insert(dataObject, tableName);
         }
 
-        public void Update<T>(T dataObject, bool saveUpdate = false)
+        public void Update<T>(T dataObject, bool saveUpdate = false) where T : Entity
         {
-            if (saveUpdate)
-            {
-                throw new NotSupportedException("Only unsafe update method implemented yet.");
-            }
-
-            var tableName = ResolveTablename(dataObject);
+            string tableName = ResolveTablename(dataObject);
 
             using (IDbConnection connection = GetDbConnection())
             {
@@ -108,9 +112,9 @@ namespace ElzUtilLibary.Database
             }
         }
 
-        public void Delete<T>(T dataObject, bool saveDelete = false)
+        public void Delete<T>(T dataObject, bool saveDelete = false) where T : Entity
         {
-            var tableName = ResolveTablename(dataObject);
+            string tableName = ResolveTablename(dataObject);
 
             using (IDbConnection connection = GetDbConnection())
             {
@@ -188,7 +192,7 @@ namespace ElzUtilLibary.Database
             return string.Format(SqlInsertTemplate, tableName, columnNames, valueList);
         }
 
-        private string BuildSqlUpdateStatement<T>(T dataObject, string tableName, bool saveUpdate)
+        private string BuildSqlUpdateStatement<T>(T dataObject, string tableName, bool saveUpdate) where T : Entity
         {
             string whereClause = BuildWhereClause(dataObject, saveUpdate);
             string setClause = BuildSetClause(dataObject);
@@ -196,14 +200,14 @@ namespace ElzUtilLibary.Database
             return string.Format(SqlUpdateTemplate, tableName, setClause, whereClause);
         }
 
-        private string BuildSqlDeleteStatement<T>(T dataObject, string tableName, bool saveDelete)
+        private string BuildSqlDeleteStatement<T>(T dataObject, string tableName, bool saveDelete) where T : Entity
         {
             string whereClause = BuildWhereClause(dataObject, saveDelete);
 
             return string.Format(SqlDeleteTemplate, tableName, whereClause);
         }
 
-        private string BuildWhereClause<T>(T dataObject, bool save)
+        private string BuildWhereClause<T>(T dataObject, bool save) where T : Entity
         {
             string whereClause = string.Empty;
 
@@ -214,16 +218,16 @@ namespace ElzUtilLibary.Database
             {
                 foreach (PropertyInfo propertyInfo in properties)
                 {
-                    var columnName = propertyInfo.Name;
-                    var columnValue = Escape(propertyInfo.GetValue(dataObject));
+                    string columnName = propertyInfo.Name;
+                    string oldColumnValue = Escape(dataObject.OriginalProperties[columnName]);
 
-                    if (columnValue == "NULL")
+                    if (oldColumnValue == "NULL")
                     {
-                        whereClause += string.Format("{0} IS {1} AND ", columnName, columnValue);
+                        whereClause += string.Format("{0} IS {1} AND ", columnName, oldColumnValue);
                     }
                     else
                     {
-                        whereClause += string.Format("{0} = {1} AND ", columnName, columnValue);
+                        whereClause += string.Format("{0} = {1} AND ", columnName, oldColumnValue);
                     }
                 }
 
@@ -235,8 +239,8 @@ namespace ElzUtilLibary.Database
                 {
                     if (IsPrimaryKey(propertyInfo))
                     {
-                        var columnName = propertyInfo.Name;
-                        var columnValue = Escape(propertyInfo.GetValue(dataObject));
+                        string columnName = propertyInfo.Name;
+                        string columnValue = Escape(propertyInfo.GetValue(dataObject));
 
                         whereClause = string.Format("{0} = {1}", columnName, columnValue);
                         break;
@@ -258,15 +262,15 @@ namespace ElzUtilLibary.Database
 
             Type type = typeof (T);
             PropertyInfo[] properties = type.GetProperties();
-            
+
             foreach (PropertyInfo propertyInfo in properties)
             {
                 if (!IsPrimaryKey(propertyInfo))
                 {
-                    var columnName = propertyInfo.Name;
-                    var columnValue = Escape(propertyInfo.GetValue(dataObject));
+                    string columnName = propertyInfo.Name;
+                    string columnValue = Escape(propertyInfo.GetValue(dataObject));
 
-                    setClause += string.Format("{0} = {1}, ", columnName, columnValue);    
+                    setClause += string.Format("{0} = {1}, ", columnName, columnValue);
                 }
             }
 
@@ -360,7 +364,7 @@ namespace ElzUtilLibary.Database
         {
             string tableName;
 
-            var tablenameAttribute = (Tablename) dataObject.GetType().GetCustomAttribute(typeof(Tablename));
+            var tablenameAttribute = (Tablename) dataObject.GetType().GetCustomAttribute(typeof (Tablename));
 
             if (tablenameAttribute != null)
             {

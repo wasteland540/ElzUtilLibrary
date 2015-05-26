@@ -17,8 +17,7 @@ namespace ElzUtilLibaryUnitTest.Database
     public class MsSqlConnectorUnitTest
     {
         private const string ConnectionString =
-            //@"Data Source=localhost\TESTDB;Initial Catalog=UnitTestDB;Integrated Security=True";
-            @"Data Source=localhost\KS21DB;Initial Catalog=UnitTestDB;Integrated Security=True";
+            @"Data Source=localhost\TESTDB;Initial Catalog=UnitTestDB;Integrated Security=True";
 
         private static IDatabaseConnector _msSqlConnector;
 
@@ -102,7 +101,7 @@ namespace ElzUtilLibaryUnitTest.Database
         // public void MyTestInitialize() { }
         //
         // Use TestCleanup to run code after each test has run
-        [TestCleanup()]
+        [TestCleanup]
         public void MyTestCleanup()
         {
             CleanupData();
